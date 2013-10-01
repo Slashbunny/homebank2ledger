@@ -1,0 +1,163 @@
+#!/bin/env php
+<?php
+
+$options  = getopt( 'f:' );
+$filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
+
+if ( empty( $filename ) )
+{
+    getUsage( $argv[0] );
+}
+
+if ( ! is_readable( $filename ) )
+{
+    echo "Error: Could not read HomeBank data file.\n";
+}
+
+$dom = new DOMDocument();
+$dom->load( $filename );
+
+$accounts   = attributes2array( $dom->getElementsByTagName( 'account' ) );
+$payees     = attributes2array( $dom->getElementsByTagName( 'pay' ) );
+$categories = attributes2array( $dom->getElementsByTagName( 'cat' ) );
+$entries    = attributes2array( $dom->getElementsByTagName( 'ope' ), false );
+
+foreach ( $accounts as $account )
+{
+    if ( (int)$account['initial'] != 0 )
+    {
+        echo "1/1 * Opening Balance\n";
+        echo "    Assets:" . $account['name'] . "    ". round( $account['initial'], 2 ) . "\n";
+        echo "    Equity:Opening Balances\n";
+        echo "\n";
+    }
+}
+
+foreach ( $entries as $entry )
+{
+    $reconciled = false;
+
+    if ( isset( $entry['flags'] ) )
+    {
+        $reconciled = (bool)( (int)$entry['flags'] & 1 );
+    }
+
+    if ( empty( $entry['category'] ) )
+        $category = 'Uncategorized';
+    else
+        $category = getCategoryString( $entry['category'], '' );
+
+    if ( $entry['amount'] > 0 )
+    {
+        $entry_type = 'Income';
+    }
+    else
+    {
+        $entry_type = 'Expenses';
+    }
+
+    if ( empty( $entry['payee'] ) )
+        $payee = 'Unknown Payee';
+    else
+        $payee = $payees[ $entry['payee'] ]['name'];
+
+    // Date
+    echo glib_julian_to_gregorian( $entry[ 'date' ] );
+
+    // Recon Flag
+    echo ( $reconciled ) ? ' * ' : '   ';
+
+    // Payee
+    echo $payee;
+
+    // Description if available
+    if ( !empty( $entry['wording'] ) )
+        echo '      ; ' . str_replace(array('[',']'), '|', $entry['wording']);
+
+    echo "\n";
+
+    // Payment line
+    echo '    ' , $entry_type , ':' , $category , '     ' , ( round( $entry['amount'], 2 ) * -1 );
+
+    // Info if available
+    if ( !empty( $entry['info'] ) )
+        echo "     ; " . $entry['info'];
+    
+    echo "\n";
+
+    // Account line
+    echo '    ' , 'Assets:' , $accounts[ $entry['account'] ]["name"] , "\n";
+    echo "\n";
+}
+
+function attributes2array( $xml_data, $use_key_attr_as_index = true )
+{
+    $result = array();
+    $i      = 0;
+
+    foreach ( $xml_data as $node )
+    {
+        if ( $use_key_attr_as_index === true )
+        {
+            $pkey_node = $node->attributes->getNamedItem( 'key' );
+            $pkey      = $pkey_node->nodeValue;
+        }
+        else
+        {
+            $pkey = $i;
+        }
+
+        foreach ( $node->attributes as $attribute )
+        {
+            $result[ $pkey ][ $attribute->nodeName ] = $attribute->nodeValue;
+        }
+
+        $i++;
+    }
+
+    return $result;
+}
+
+
+function getUsage( $name )
+{
+    echo "usage: " , $name , " -f input_file" , "\n";
+    echo "  options: \n";
+    echo "    -f         HomeBank .xhb data filename \n";
+    echo "\n";
+    exit;
+}
+
+
+function getCategoryString( $cat_id, $desc )
+{
+    global $categories;
+
+    if ( !isset( $categories[ $cat_id ] ) )
+    {
+        return 'Uncategorized';
+    }
+
+    if ( !isset( $categories[ $cat_id]['parent'] ) )
+    {
+        if ( empty( $desc ) )
+        {
+            return $categories[ $cat_id ]['name'];
+        }
+        else
+        {
+            return $categories[ $cat_id ]['name'] . ':' . $desc;
+        }
+    }
+
+    return getCategoryString( $categories[ $cat_id ]['parent'], $categories[ $cat_id ]['name'] );
+}
+
+function glib_julian_to_gregorian( $julian_days )
+{
+    $date = new DateTime( '00-00-0001' );
+
+    $date->add(new DateInterval('P' . $julian_days . 'D'));
+
+    return $date->format('Y/m/d');
+}
