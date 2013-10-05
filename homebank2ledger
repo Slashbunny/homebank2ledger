@@ -26,8 +26,13 @@ foreach ( $accounts as $account )
 {
     if ( (int)$account['initial'] != 0 )
     {
+        if ( $account['key'] == 5 )
+            $a_type = 'Liabilities';
+        else
+            $a_type = 'Assets';
+
         echo "1/1 * Opening Balance\n";
-        echo "    Assets:" . $account['name'] . "    ". round( $account['initial'], 2 ) . "\n";
+        echo "    " . $a_type . ":" . $account['name'] . "    ". round( $account['initial'], 2 ) . "\n";
         echo "    Equity:Opening Balances\n";
         echo "\n";
     }
@@ -56,6 +61,11 @@ foreach ( $entries as $entry )
         $entry_type = 'Expenses';
     }
 
+    if ( $entry['account'] == 5 )
+        $a_type = 'Liabilities:';
+    else
+        $a_type = 'Assets:';
+
     if ( empty( $entry['payee'] ) )
         $payee = 'Unknown Payee';
     else
@@ -68,13 +78,11 @@ foreach ( $entries as $entry )
     echo ( $reconciled ) ? ' * ' : '   ';
 
     // Payee
-    echo $payee;
+    echo $payee . "\n";
 
     // Description if available
     if ( !empty( $entry['wording'] ) )
-        echo '      ; ' . str_replace(array('[',']'), '|', $entry['wording']);
-
-    echo "\n";
+        echo '    ; ' . str_replace(array('[',']'), '|', $entry['wording']) . "\n";
 
     // Payment line
     echo '    ' , $entry_type , ':' , $category , '     ' , ( round( $entry['amount'], 2 ) * -1 );
@@ -82,11 +90,11 @@ foreach ( $entries as $entry )
     // Info if available
     if ( !empty( $entry['info'] ) )
         echo "     ; " . $entry['info'];
-    
+
     echo "\n";
 
     // Account line
-    echo '    ' , 'Assets:' , $accounts[ $entry['account'] ]["name"] , "\n";
+    echo '    ' , $a_type , $accounts[ $entry['account'] ]["name"] , "\n";
     echo "\n";
 }
 
