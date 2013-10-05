@@ -1,11 +1,23 @@
 #!/bin/env php
 <?php
 
+require_once 'lib/Bunny/HomeBank/Account.php';
+require_once 'lib/Bunny/HomeBank/AccountParser.php';
+require_once 'lib/Bunny/HomeBank/Category.php';
+require_once 'lib/Bunny/HomeBank/CategoryParser.php';
 require_once 'lib/Bunny/HomeBank/Entry.php';
 require_once 'lib/Bunny/HomeBank/EntryParser.php';
+require_once 'lib/Bunny/HomeBank/Payee.php';
+require_once 'lib/Bunny/HomeBank/PayeeParser.php';
 
+use \Bunny\HomeBank\Account;
+use \Bunny\HomeBank\AccountParser;
+use \Bunny\HomeBank\Category;
+use \Bunny\HomeBank\CategoryParser;
 use \Bunny\HomeBank\Entry;
 use \Bunny\HomeBank\EntryParser;
+use \Bunny\HomeBank\Payee;
+use \Bunny\HomeBank\PayeeParser;
 
 $options  = getopt( 'f:' );
 $filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
@@ -23,9 +35,9 @@ if ( ! is_readable( $filename ) )
 $dom = new DOMDocument();
 $dom->load( $filename );
 
-$accounts   = attributes2array( $dom->getElementsByTagName( 'account' ) );
-$payees     = attributes2array( $dom->getElementsByTagName( 'pay' ) );
-$categories = attributes2array( $dom->getElementsByTagName( 'cat' ) );
+$accounts   = AccountParser::parse( $dom->getElementsByTagName( 'account' ) );
+$payees     = PayeeParser::parse( $dom->getElementsByTagName( 'pay' ) );
+$categories = CategoryParser::parse( $dom->getElementsByTagName( 'cat' ) );
 $entries    = EntryParser::parse( $dom->getElementsByTagName( 'ope' ) );
 
 foreach ( $accounts as $account )
@@ -102,34 +114,6 @@ foreach ( $entries as $entry )
     // Account line
     echo '    ' , $a_type , $accounts[ $entry['account'] ]["name"] , "\n";
     echo "\n";
-}
-
-function attributes2array( $xml_data, $use_key_attr_as_index = true )
-{
-    $result = array();
-    $i      = 0;
-
-    foreach ( $xml_data as $node )
-    {
-        if ( $use_key_attr_as_index === true )
-        {
-            $pkey_node = $node->attributes->getNamedItem( 'key' );
-            $pkey      = $pkey_node->nodeValue;
-        }
-        else
-        {
-            $pkey = $i;
-        }
-
-        foreach ( $node->attributes as $attribute )
-        {
-            $result[ $pkey ][ $attribute->nodeName ] = $attribute->nodeValue;
-        }
-
-        $i++;
-    }
-
-    return $result;
 }
 
 
