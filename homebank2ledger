@@ -1,6 +1,12 @@
 #!/bin/env php
 <?php
 
+require_once 'lib/Bunny/HomeBank/Entry.php';
+require_once 'lib/Bunny/HomeBank/EntryParser.php';
+
+use \Bunny\HomeBank\Entry;
+use \Bunny\HomeBank\EntryParser;
+
 $options  = getopt( 'f:' );
 $filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
 
@@ -20,7 +26,7 @@ $dom->load( $filename );
 $accounts   = attributes2array( $dom->getElementsByTagName( 'account' ) );
 $payees     = attributes2array( $dom->getElementsByTagName( 'pay' ) );
 $categories = attributes2array( $dom->getElementsByTagName( 'cat' ) );
-$entries    = attributes2array( $dom->getElementsByTagName( 'ope' ), false );
+$entries    = EntryParser::parse( $dom->getElementsByTagName( 'ope' ) );
 
 foreach ( $accounts as $account )
 {
@@ -72,7 +78,7 @@ foreach ( $entries as $entry )
         $payee = $payees[ $entry['payee'] ]['name'];
 
     // Date
-    echo glib_julian_to_gregorian( $entry[ 'date' ] );
+    echo $entry[ 'date' ];
 
     // Recon Flag
     echo ( $reconciled ) ? ' * ' : '   ';
@@ -161,11 +167,3 @@ function getCategoryString( $cat_id, $desc )
     return getCategoryString( $categories[ $cat_id ]['parent'], $categories[ $cat_id ]['name'] );
 }
 
-function glib_julian_to_gregorian( $julian_days )
-{
-    $date = new DateTime( '00-00-0001' );
-
-    $date->add(new DateInterval('P' . $julian_days . 'D'));
-
-    return $date->format('Y/m/d');
-}
