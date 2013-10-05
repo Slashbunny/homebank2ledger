@@ -3,14 +3,7 @@
 
 require 'vendor/autoload.php';
 
-use \Bunny\HomeBank\Account;
-use \Bunny\HomeBank\AccountParser;
-use \Bunny\HomeBank\Category;
-use \Bunny\HomeBank\CategoryParser;
-use \Bunny\HomeBank\Entry;
-use \Bunny\HomeBank\EntryParser;
-use \Bunny\HomeBank\Payee;
-use \Bunny\HomeBank\PayeeParser;
+use \Bunny\HomeBank\TypeParser;
 
 $options  = getopt( 'f:' );
 $filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
@@ -28,10 +21,10 @@ if ( ! is_readable( $filename ) )
 $dom = new DOMDocument();
 $dom->load( $filename );
 
-$accounts   = AccountParser::parse( $dom->getElementsByTagName( 'account' ) );
-$payees     = PayeeParser::parse( $dom->getElementsByTagName( 'pay' ) );
-$categories = CategoryParser::parse( $dom->getElementsByTagName( 'cat' ) );
-$entries    = EntryParser::parse( $dom->getElementsByTagName( 'ope' ) );
+$accounts   = TypeParser::parse( 'Account',  $dom->getElementsByTagName( 'account' ) );
+$payees     = TypeParser::parse( 'Payee',    $dom->getElementsByTagName( 'pay' ) );
+$categories = TypeParser::parse( 'Category', $dom->getElementsByTagName( 'cat' ) );
+$entries    = TypeParser::parse( 'Entry',    $dom->getElementsByTagName( 'ope' ) );
 
 foreach ( $accounts as $account )
 {
