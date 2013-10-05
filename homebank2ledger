@@ -1,14 +1,7 @@
 #!/bin/env php
 <?php
 
-require_once 'lib/Bunny/HomeBank/Account.php';
-require_once 'lib/Bunny/HomeBank/AccountParser.php';
-require_once 'lib/Bunny/HomeBank/Category.php';
-require_once 'lib/Bunny/HomeBank/CategoryParser.php';
-require_once 'lib/Bunny/HomeBank/Entry.php';
-require_once 'lib/Bunny/HomeBank/EntryParser.php';
-require_once 'lib/Bunny/HomeBank/Payee.php';
-require_once 'lib/Bunny/HomeBank/PayeeParser.php';
+require 'vendor/autoload.php';
 
 use \Bunny\HomeBank\Account;
 use \Bunny\HomeBank\AccountParser;

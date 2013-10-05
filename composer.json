@@ -1,0 +1,16 @@
+{
+    "name": "bunny/homebank2ledger",
+    "description": "Converts HomeBank .xhb data files to ledger-cli format",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Slashbunny",
+            "email": "demodevil@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Bunny": "lib/"
+        }
+    }
+}
