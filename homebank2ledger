@@ -3,6 +3,7 @@
 
 require 'vendor/autoload.php';
 
+use \Bunny\HomeBank\HomeBankFile;
 use \Bunny\HomeBank\TypeParser;
 
 $options  = getopt( 'f:' );
@@ -21,10 +22,11 @@ if ( ! is_readable( $filename ) )
 $dom = new DOMDocument();
 $dom->load( $filename );
 
-$accounts   = TypeParser::parse( 'Account',  $dom->getElementsByTagName( 'account' ) );
-$payees     = TypeParser::parse( 'Payee',    $dom->getElementsByTagName( 'pay' ) );
-$categories = TypeParser::parse( 'Category', $dom->getElementsByTagName( 'cat' ) );
-$entries    = TypeParser::parse( 'Entry',    $dom->getElementsByTagName( 'ope' ) );
+$homebank   = new HomeBankFile( $dom, new TypeParser() );
+$accounts   = $homebank->getAccounts();
+$payees     = $homebank->getPayees();
+$categories = $homebank->getPayees();
+$entries    = $homebank->getEntries();
 
 foreach ( $accounts as $account )
 {

@@ -4,7 +4,12 @@ namespace Bunny\HomeBank;
 
 class TypeParser
 {
-    static public function parse( $type, \DOMNodeList $nodes )
+    public function __construct()
+    {
+        return;
+    }
+
+    public function parse( $type, \DOMNodeList $nodes )
     {
         $objects    = array();
         $class_type = 'Bunny\\HomeBank\\' . $type;
