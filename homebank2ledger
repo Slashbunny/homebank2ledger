@@ -33,8 +33,11 @@ $entries  = $homebank->getEntries();
 $loader = new Twig_Loader_Filesystem( './templates'  );
 $twig   = new Twig_Environment( $loader );
 
+// Opening balances will be entered as 1/1 in the year of the first entry
+$start_date = date( 'Y', strtotime( $entries[0]['date'] ) ) . '/01/01';
+
 // Output results in ledger format
-echo $twig->render( 'opening_balances.twig', array( 'accounts' => $accounts ) );
+echo $twig->render( 'opening_balances.twig', array( 'accounts' => $accounts, 'date' => $start_date ) );
 echo $twig->render( 'entries.twig', array( 'entries' => $entries ) );
 
 function getUsage( $name )
