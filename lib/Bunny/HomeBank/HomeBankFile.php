@@ -224,7 +224,7 @@ class HomeBankFile
 
     private function _convertJulianDate( $julian_days )
     {
-        $date = new \DateTime( '00-00-0001' );
+        $date = new \DateTime( '0001-01-00' );
 
         $date->add( new \DateInterval( 'P' . $julian_days . 'D' ) );
 
