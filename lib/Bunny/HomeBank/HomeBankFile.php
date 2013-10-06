@@ -157,7 +157,7 @@ class HomeBankFile
             else
             {
                 // This this income or expense?
-                $income_expense = ( $data[ 'amount' ] > 0 ) ? 'Income' : 'Expense';
+                $income_expense = ( $data[ 'amount' ] > 0 ) ? 'Income' : 'Expenses';
 
                 // Determine Income/Expense Category
                 $category = !empty( $data[ 'category' ] )
