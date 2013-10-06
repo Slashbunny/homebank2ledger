@@ -1,7 +1,7 @@
 {% autoescape false %}
 {{ date }} {% if reconciled == true %}*{% else %} {% endif %} {{ payee_name }}
-    {% if wording is not empty%}; {{ wording }}{% endif %}
-
+{% if wording is not empty%}    ; {{ wording }}
+{% endif %}
     {{ "%-40s"|format( account1 ) }}    ${{ amount|number_format( 2, '.', ',' ) }}{% if info is not empty %}    ; {{ info }}{% endif %}
 
     {{ account2 }}
