@@ -182,6 +182,28 @@ class HomeBankFile
         {
             unset( $this->_entries[ $id ] );
         }
+
+        // Sort Entries by Date
+        usort( $this->_entries, array( $this, '_sortByDate' ) );
+    }
+
+    private function _sortByDate( $a, $b )
+    {
+        $a_date = strtotime( $a[ 'date' ] );
+        $b_date = strtotime( $b[ 'date' ] );
+
+        if ( $a_date > $b_date )
+        {
+            return 1;
+        }
+        elseif ( $a_date < $b_date )
+        {
+            return -1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     private function _expandCategoryNames( $id, $full_name = '' )
