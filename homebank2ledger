@@ -7,6 +7,7 @@ use \Bunny\HomeBank\HomeBankFile;
 use \Bunny\HomeBank\TypeParser;
 use \Bunny\HomeBank\NodeParser;
 
+// Parse command line options
 $options  = getopt( 'f:' );
 $filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
 
@@ -20,74 +21,21 @@ if ( ! is_readable( $filename ) )
     echo "Error: Could not read HomeBank data file.\n";
 }
 
+// Create DOM Document, load and parse HomeBank data file
 $dom = new DOMDocument();
 $dom->load( $filename );
 
-$homebank   = new HomeBankFile( $dom, new TypeParser(), new NodeParser() );
-$accounts   = $homebank->getAccounts();
-$payees     = $homebank->getPayees();
-$categories = $homebank->getCategories();
-$entries    = $homebank->getEntries();
+$homebank = new HomeBankFile( $dom, new TypeParser(), new NodeParser() );
+$accounts = $homebank->getAccounts();
+$entries  = $homebank->getEntries();
 
-foreach ( $accounts as $account )
-{
-    if ( (int)$account['initial'] != 0 )
-    {
-        echo "1/1 * Opening Balance\n";
-        echo "    " . $account['account_type'] . ":" . $account['name'] . "    ". $account['initial'] . "\n";
-        echo "    Equity:Opening Balances\n";
-        echo "\n";
-    }
-}
+// Initialize Twig Template Engine
+$loader = new Twig_Loader_Filesystem( './templates'  );
+$twig   = new Twig_Environment( $loader );
 
-foreach ( $entries as $entry )
-{
-    if ( empty( $entry['category'] ) )
-        $category = 'Uncategorized';
-    else
-        $category = $categories[ $entry['category'] ][ 'full_name' ];
-
-    if ( $entry['amount'] > 0 )
-    {
-        $entry_type = 'Income';
-    }
-    else
-    {
-        $entry_type = 'Expenses';
-    }
-
-    if ( empty( $entry['payee'] ) )
-        $payee = 'Unknown Payee';
-    else
-        $payee = $payees[ $entry['payee'] ]['name'];
-
-    // Date
-    echo $entry[ 'date' ];
-
-    // Recon Flag
-    echo ( $entry[ 'reconciled' ] ) ? ' * ' : '   ';
-
-    // Payee
-    echo $payee . "\n";
-
-    // Description if available
-    if ( !empty( $entry['wording'] ) )
-        echo '    ; ' . str_replace(array('[',']'), '|', $entry['wording']) . "\n";
-
-    // Payment line
-    echo '    ' , $entry_type , ':' , $category , '     ' , ( $entry['amount'] * -1 );
-
-    // Info if available
-    if ( !empty( $entry['info'] ) )
-        echo "     ; " . $entry['info'];
-
-    echo "\n";
-
-    // Account line
-    echo '    ' , $accounts[ $entry['account'] ][ 'account_type' ] , ':' , $accounts[ $entry['account'] ]["name"] , "\n";
-    echo "\n";
-}
-
+// Output results in ledger format
+echo $twig->render( 'opening_balances.twig', array( 'accounts' => $accounts ) );
+echo $twig->render( 'entries.twig', array( 'entries' => $entries ) );
 
 function getUsage( $name )
 {

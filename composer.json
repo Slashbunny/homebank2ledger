@@ -12,5 +12,8 @@
         "psr-0": {
             "Bunny": "lib/"
         }
+    },
+    "require": {
+        "twig/twig": "1.*"
     }
 }
