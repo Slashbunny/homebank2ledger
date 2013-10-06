@@ -5,6 +5,7 @@ require 'vendor/autoload.php';
 
 use \Bunny\HomeBank\HomeBankFile;
 use \Bunny\HomeBank\TypeParser;
+use \Bunny\HomeBank\NodeParser;
 
 $options  = getopt( 'f:' );
 $filename = ( !empty( $options['f'] ) ) ? $options['f'] : '';
@@ -22,23 +23,18 @@ if ( ! is_readable( $filename ) )
 $dom = new DOMDocument();
 $dom->load( $filename );
 
-$homebank   = new HomeBankFile( $dom, new TypeParser() );
+$homebank   = new HomeBankFile( $dom, new TypeParser(), new NodeParser() );
 $accounts   = $homebank->getAccounts();
 $payees     = $homebank->getPayees();
-$categories = $homebank->getPayees();
+$categories = $homebank->getCategories();
 $entries    = $homebank->getEntries();
 
 foreach ( $accounts as $account )
 {
     if ( (int)$account['initial'] != 0 )
     {
-        if ( $account['key'] == 5 )
-            $a_type = 'Liabilities';
-        else
-            $a_type = 'Assets';
-
         echo "1/1 * Opening Balance\n";
-        echo "    " . $a_type . ":" . $account['name'] . "    ". round( $account['initial'], 2 ) . "\n";
+        echo "    " . $account['account_type'] . ":" . $account['name'] . "    ". $account['initial'] . "\n";
         echo "    Equity:Opening Balances\n";
         echo "\n";
     }
@@ -46,17 +42,10 @@ foreach ( $accounts as $account )
 
 foreach ( $entries as $entry )
 {
-    $reconciled = false;
-
-    if ( isset( $entry['flags'] ) )
-    {
-        $reconciled = (bool)( (int)$entry['flags'] & 1 );
-    }
-
     if ( empty( $entry['category'] ) )
         $category = 'Uncategorized';
     else
-        $category = getCategoryString( $entry['category'], '' );
+        $category = $categories[ $entry['category'] ][ 'full_name' ];
 
     if ( $entry['amount'] > 0 )
     {
@@ -67,11 +56,6 @@ foreach ( $entries as $entry )
         $entry_type = 'Expenses';
     }
 
-    if ( $entry['account'] == 5 )
-        $a_type = 'Liabilities:';
-    else
-        $a_type = 'Assets:';
-
     if ( empty( $entry['payee'] ) )
         $payee = 'Unknown Payee';
     else
@@ -81,7 +65,7 @@ foreach ( $entries as $entry )
     echo $entry[ 'date' ];
 
     // Recon Flag
-    echo ( $reconciled ) ? ' * ' : '   ';
+    echo ( $entry[ 'reconciled' ] ) ? ' * ' : '   ';
 
     // Payee
     echo $payee . "\n";
@@ -91,7 +75,7 @@ foreach ( $entries as $entry )
         echo '    ; ' . str_replace(array('[',']'), '|', $entry['wording']) . "\n";
 
     // Payment line
-    echo '    ' , $entry_type , ':' , $category , '     ' , ( round( $entry['amount'], 2 ) * -1 );
+    echo '    ' , $entry_type , ':' , $category , '     ' , ( $entry['amount'] * -1 );
 
     // Info if available
     if ( !empty( $entry['info'] ) )
@@ -100,7 +84,7 @@ foreach ( $entries as $entry )
     echo "\n";
 
     // Account line
-    echo '    ' , $a_type , $accounts[ $entry['account'] ]["name"] , "\n";
+    echo '    ' , $accounts[ $entry['account'] ][ 'account_type' ] , ':' , $accounts[ $entry['account'] ]["name"] , "\n";
     echo "\n";
 }
 
@@ -112,30 +96,5 @@ function getUsage( $name )
     echo "    -f         HomeBank .xhb data filename \n";
     echo "\n";
     exit;
-}
-
-
-function getCategoryString( $cat_id, $desc )
-{
-    global $categories;
-
-    if ( !isset( $categories[ $cat_id ] ) )
-    {
-        return 'Uncategorized';
-    }
-
-    if ( !isset( $categories[ $cat_id]['parent'] ) )
-    {
-        if ( empty( $desc ) )
-        {
-            return $categories[ $cat_id ]['name'];
-        }
-        else
-        {
-            return $categories[ $cat_id ]['name'] . ':' . $desc;
-        }
-    }
-
-    return getCategoryString( $categories[ $cat_id ]['parent'], $categories[ $cat_id ]['name'] );
 }
 

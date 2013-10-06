@@ -9,14 +9,13 @@ class TypeParser
         return;
     }
 
-    public function parse( $type, \DOMNodeList $nodes )
+    public function parse( $type, \DOMNodeList $nodes, NodeParser $parser )
     {
-        $objects    = array();
-        $class_type = 'Bunny\\HomeBank\\' . $type;
+        $objects = array();
 
         foreach ( $nodes as $node )
         {
-            $object = new $class_type( $node );
+            $object = $parser->parse( $type, $node );
 
             // If the nodes we are parsing have an attribute called 'key', use
             // that as the key in the PHP array we are creating.
