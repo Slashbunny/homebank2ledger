@@ -4,10 +4,11 @@ namespace Bunny\HomeBank;
 
 class HomeBankFile
 {
-    private $_accounts   = array();
-    private $_payees     = array();
-    private $_categories = array();
-    private $_entries    = array();
+    private $_accounts         = array();
+    private $_payees           = array();
+    private $_categories       = array();
+    private $_entries          = array();
+    private $_delete_entry_ids = array();
 
     public function __construct( \DOMDocument $dom, TypeParser $tparser, NodeParser $nparser )
     {
@@ -116,6 +117,70 @@ class HomeBankFile
 
             // Add Reconciliation Flag
             $this->_entries[ $id ][ 'reconciled' ] = (bool)( (int)$data['flags'] & 1 );
+
+            // Sanitize Wording
+            $this->_entries[ $id ][ 'wording' ] = $this->_sanitizeComment( $data[ 'wording' ] );
+
+            // Sanitize Info
+            $this->_entries[ $id ][ 'info' ] = $this->_sanitizeComment( $data[ 'info' ] );
+
+            // Resolve Payee ID
+            $this->_entries[ $id ][ 'payee_name' ] = !empty( $data[ 'payee' ] )
+                ? $this->_payees[ $data[ 'payee' ] ][ 'name' ]
+                : 'Unknown Payee';
+
+            // Account-to-account transfer
+            if ( !empty( $data[ 'kxfer' ] ) )
+            {
+                // HomeBank records account-to-account transfers twice, once per
+                // account. This means, when we are generating a ledger, we need
+                // to ignore one of the transactions
+                //
+                // For no reason in particular, we are going to ignore the entry
+                // with the negative value.
+
+                if ( $data[ 'amount' ] < 0 )
+                {
+                    // Save the ID to an array. At the end of processing, it
+                    // will be deleted from the array
+                    $this->_delete_entry_ids[] = $id;
+                    continue;
+                }
+
+                $account1 = $this->_accounts[ $data[ 'account' ] ];
+                $account2 = $this->_accounts[ $data[ 'dst_account' ] ];
+
+                $this->_entries[ $id ][ 'account1' ] = $account1[ 'account_type' ] . ':' . $account1[ 'name' ];
+                $this->_entries[ $id ][ 'account2' ] = $account2[ 'account_type' ] . ':' . $account2[ 'name' ];
+            }
+            // Normal transaction
+            else
+            {
+                // This this income or expense?
+                $income_expense = ( $data[ 'amount' ] > 0 ) ? 'Income' : 'Expense';
+
+                // Determine Income/Expense Category
+                $category = !empty( $data[ 'category' ] )
+                    ? $this->_categories[ $data[ 'category' ] ][ 'full_name' ]
+                    : 'Unknown Account';
+
+                // Resolve Account Name
+                $account = $this->_accounts[ $data[ 'account' ] ];
+
+                // Create Credit/Debit Accounts for Ledger Entry
+                $this->_entries[ $id ][ 'account1' ] = $income_expense . ':' . $category;
+                $this->_entries[ $id ][ 'account2' ] = $account[ 'account_type' ] . ':' . $account[ 'name' ];
+
+                // Invert Amount because we want to display the Income/Expense first during output
+                $this->_entries[ $id ][ 'amount' ] = $data[ 'amount' ] * -1;
+            }
+
+        }
+
+        // Remove Entries Marked for Deletion
+        foreach ( $this->_delete_entry_ids as $id )
+        {
+            unset( $this->_entries[ $id ] );
         }
     }
 
@@ -142,6 +207,18 @@ class HomeBankFile
         $date->add( new \DateInterval( 'P' . $julian_days . 'D' ) );
 
         return $date->format( 'Y/m/d' );
+    }
+
+    private function _sanitizeComment( $string )
+    {
+        // Square brackets have special meaning in comments
+        $string = str_replace( '[', '(', $string );
+        $string = str_replace( ']', ')', $string );
+
+        // Colons designate tags in ledger
+        $string = str_replace( ':', '：', $string );
+
+        return $string;
     }
 
     public function getAccounts()
