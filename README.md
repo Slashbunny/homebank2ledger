@@ -5,21 +5,23 @@ Converts [HomeBank][homebank] data files into [Ledger][ledger-cli] format. Due t
 [homebank]: http://homebank.free.fr/
 [ledger-cli]: http://ledger-cli.org/
 
-## Usage
-
-```
-  $ ./homebank2ledger -f untitled.xhb > converted.ledger
-```
-
-## Installation
+## Setup
 
 A modern version of PHP (5.3+) is required to run homebank2ledger. [Composer][composer] is required to install additional dependencies.
 
-Run composer within the project directory:
+Run composer within the project directory first:
 
-```
-  $ cd homebank2ledger
-  $ composer install
+```sh
+$ composer install
 ```
 
 [composer]: http://getcomposer.org/
+
+## Usage
+
+The program can be run directly from the cloned repository:
+
+```sh
+$ ./homebank2ledger -f untitled.xhb > converted.ledger
+```
+
